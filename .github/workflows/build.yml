@@ -24,22 +24,22 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Build droppedapk APK
-      run: ./gradlew :droppedapk:assembleRelease
+    - name: Build droppedapk APK (Debug)
+      run: ./gradlew :droppedapk:assembleDebug
 
     - name: Copy droppedapk to app assets
       run: |
         rm -rf app/src/main/assets
         mkdir -p app/src/main/assets
-        cp droppedapk/build/outputs/apk/release/droppedapk-release.apk app/src/main/assets/droppedapk.apk
+        cp droppedapk/build/outputs/apk/debug/droppedapk-debug.apk app/src/main/assets/droppedapk.apk
 
-    - name: Build app APK
-      run: ./gradlew :app:assembleRelease
+    - name: Build app APK (Debug)
+      run: ./gradlew :app:assembleDebug
 
     - name: Upload APKs as artifacts
       uses: actions/upload-artifact@v4
       with:
         name: AbxOverflow-APKs
         path: |
-          app/build/outputs/apk/release/*.apk
-          droppedapk/build/outputs/apk/release/*.apk
+          app/build/outputs/apk/debug/*.apk
+          droppedapk/build/outputs/apk/debug/*.apk
