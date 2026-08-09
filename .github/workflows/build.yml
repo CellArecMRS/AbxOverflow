@@ -24,18 +24,43 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
+    
     - name: Build droppedapk APK (Debug)
       run: ./gradlew :droppedapk:assembleDebug
 
+    
+    - name: Extract certificate and public key, update Main.java
+      run: |
+        # 安装 openssl（如果未安装）
+        sudo apt-get update && sudo apt-get install -y openssl
+        
+        # 提取 SHA-256 证书指纹（去掉冒号）
+        CERT_HEX=$(keytool -printcert -jarfile droppedapk/build/outputs/apk/debug/droppedapk-debug.apk | grep "SHA-256" | head -1 | awk -F': ' '{print $2}' | tr -d ':')
+        
+        # 提取公钥（Base64 格式，去除 PEM 头尾和换行）
+        keytool -printcert -jarfile droppedapk/build/outputs/apk/debug/droppedapk-debug.apk -rfc > cert.pem
+        KEY_BASE64=$(openssl x509 -pubkey -noout -in cert.pem | grep -v "PUBLIC KEY" | tr -d '\n')
+        
+        # 更新 Main.java 中的 TARGET_CERT_HEX 和 TARGET_KEY_BASE64
+        sed -i "s|static final String TARGET_CERT_HEX = \".*\"|static final String TARGET_CERT_HEX = \"$CERT_HEX\"|" app/src/main/java/com/example/abxoverflow/Main.java
+        sed -i "s|static final String TARGET_KEY_BASE64 = \".*\"|static final String TARGET_KEY_BASE64 = \"$KEY_BASE64\"|" app/src/main/java/com/example/abxoverflow/Main.java
+        
+        # 显示更新后的值（用于调试）
+        echo "Updated TARGET_CERT_HEX: $CERT_HEX"
+        echo "Updated TARGET_KEY_BASE64: $KEY_BASE64"
+
+    
     - name: Copy droppedapk to app assets
       run: |
         rm -rf app/src/main/assets
         mkdir -p app/src/main/assets
         cp droppedapk/build/outputs/apk/debug/droppedapk-debug.apk app/src/main/assets/droppedapk-release.apk
 
+    
     - name: Build app APK (Debug)
       run: ./gradlew :app:assembleDebug
 
+    
     - name: Upload APKs as artifacts
       uses: actions/upload-artifact@v4
       with:
