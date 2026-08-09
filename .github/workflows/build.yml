@@ -31,7 +31,7 @@ jobs:
       run: |
         rm -rf app/src/main/assets
         mkdir -p app/src/main/assets
-        cp droppedapk/build/outputs/apk/debug/droppedapk-debug.apk app/src/main/assets/droppedapk.apk
+        cp droppedapk/build/outputs/apk/debug/droppedapk-debug.apk app/src/main/assets/droppedapk-release.apk
 
     - name: Build app APK (Debug)
       run: ./gradlew :app:assembleDebug
