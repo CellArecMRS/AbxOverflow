@@ -24,66 +24,60 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    # 1. 生成固定的 Debug 密钥库（确保签名一致）
-    - name: Generate fixed debug keystore
+    # ============================================================
+    # 1. 还原固定的密钥库（把下面的 Base64 替换成你自己的）
+    # ============================================================
+    - name: Restore fixed keystore
       run: |
-        mkdir -p ~/.android
-        keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug, O=Android, C=US"
+        echo "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" | base64 -d > debug.keystore
 
-    # 2. 编译 droppedapk (使用固定签名)
+    # ============================================================
+    # 2. 编译 droppedapk（强制 v1 签名）
+    # ============================================================
     - name: Build droppedapk APK (Debug)
       run: ./gradlew :droppedapk:assembleDebug
 
-    # 3. 提取证书和公钥，并更新 Main.java
-    - name: Extract certificate and public key, update Main.java
+    # ============================================================
+    # 3. 从 APK 中提取证书（v1 签名可以正常提取）
+    # ============================================================
+    - name: Extract certificate and public key
+      id: extract_cert
       run: |
-        # 安装必要工具
-        sudo apt-get update && sudo apt-get install -y openssl apksigner
-
         APK_PATH="droppedapk/build/outputs/apk/debug/droppedapk-debug.apk"
+        
+        # 提取 SHA-256 指纹
+        CERT_HEX=$(keytool -printcert -jarfile "$APK_PATH" | grep "SHA-256" | head -1 | awk -F': ' '{print $2}' | tr -d ':')
+        
+        # 提取公钥
+        keytool -printcert -jarfile "$APK_PATH" -rfc > cert.pem
+        KEY_BASE64=$(openssl x509 -pubkey -noout -in cert.pem | grep -v "PUBLIC KEY" | tr -d '\n')
+        
+        echo "cert_hex=$CERT_HEX" >> $GITHUB_OUTPUT
+        echo "key_base64=$KEY_BASE64" >> $GITHUB_OUTPUT
 
-        # 使用 apksigner 提取 SHA-256 指纹（去掉冒号）
-        CERT_HEX=$(apksigner verify --print-certs "$APK_PATH" | grep "SHA-256" | head -1 | awk -F': ' '{print $2}' | tr -d ':')
-
-        # 提取证书为 PEM，再用 openssl 提取公钥 Base64
-        keytool -printcert -jarfile "$APK_PATH" -rfc > cert.pem 2>/dev/null
-        # 如果 keytool 失败（纯 V2 签名），用 apksigner 导出证书
-        if [ ! -s cert.pem ]; then
-          apksigner verify --print-certs "$APK_PATH" --print-cert > cert.pem 2>/dev/null
-        fi
-
-        KEY_BASE64=$(openssl x509 -pubkey -noout -in cert.pem 2>/dev/null | grep -v "PUBLIC KEY" | tr -d '\n')
-
-        # 如果公钥仍为空，尝试直接从证书文件提取
-        if [ -z "$KEY_BASE64" ]; then
-          KEY_BASE64=$(openssl x509 -in cert.pem -pubkey -noout 2>/dev/null | sed -n '/BEGIN PUBLIC KEY/,/END PUBLIC KEY/p' | grep -v "PUBLIC KEY" | tr -d '\n')
-        fi
-
-        # 检查变量是否非空
-        if [ -z "$CERT_HEX" ] || [ -z "$KEY_BASE64" ]; then
-          echo "Error: Failed to extract certificate or public key"
-          exit 1
-        fi
-
-        echo "CERT_HEX=$CERT_HEX"
-        echo "KEY_BASE64=$KEY_BASE64"
-
-        # 更新 Main.java 中的硬编码值
+    # ============================================================
+    # 4. 更新 Main.java
+    # ============================================================
+    - name: Update Main.java
+      run: |
+        CERT_HEX="${{ steps.extract_cert.outputs.cert_hex }}"
+        KEY_BASE64="${{ steps.extract_cert.outputs.key_base64 }}"
+        
         sed -i "s|static final String TARGET_CERT_HEX = \".*\"|static final String TARGET_CERT_HEX = \"$CERT_HEX\"|" app/src/main/java/com/example/abxoverflow/Main.java
         sed -i "s|static final String TARGET_KEY_BASE64 = \".*\"|static final String TARGET_KEY_BASE64 = \"$KEY_BASE64\"|" app/src/main/java/com/example/abxoverflow/Main.java
 
-    # 4. 复制 droppedapk 到 app 的 assets 目录
+    # ============================================================
+    # 5. 复制到 assets 并编译 app
+    # ============================================================
     - name: Copy droppedapk to app assets
       run: |
         rm -rf app/src/main/assets
         mkdir -p app/src/main/assets
         cp droppedapk/build/outputs/apk/debug/droppedapk-debug.apk app/src/main/assets/droppedapk-release.apk
 
-    # 5. 编译 app (此时 Main.java 已更新，且 assets 包含正确的 APK)
     - name: Build app APK (Debug)
       run: ./gradlew :app:assembleDebug
 
-    # 6. 上传两个 APK 作为构建产物
     - name: Upload APKs as artifacts
       uses: actions/upload-artifact@v4
       with:
