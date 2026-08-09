@@ -7,12 +7,11 @@ android {
     compileSdk 33
 
     signingConfigs {
-        debug {
-            storeFile file("debug.keystore")
-            storePassword "android"
-            keyAlias "mydebug"
-            keyPassword "android"
-            v2SigningEnabled false 
+        sdkLibrarySigningConfig {
+            storeFile(file("abxdroppedapk.keystore"))
+            storePassword("abxdroppedapk")
+            keyAlias("abxdroppedapk")
+            keyPassword("abxdroppedapk")
         }
     }
 
@@ -33,7 +32,7 @@ android {
             signingConfig signingConfigs.sdkLibrarySigningConfig
         }
         debug {
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.sdkLibrarySigningConfig
         }
     }
     compileOptions {
