@@ -24,43 +24,63 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    
     - name: Build droppedapk APK (Debug)
       run: ./gradlew :droppedapk:assembleDebug
 
-    
     - name: Extract certificate and public key, update Main.java
       run: |
-        # 安装 openssl（如果未安装）
         sudo apt-get update && sudo apt-get install -y openssl
-        
-        # 提取 SHA-256 证书指纹（去掉冒号）
-        CERT_HEX=$(keytool -printcert -jarfile droppedapk/build/outputs/apk/debug/droppedapk-debug.apk | grep "SHA-256" | head -1 | awk -F': ' '{print $2}' | tr -d ':')
-        
-        # 提取公钥（Base64 格式，去除 PEM 头尾和换行）
-        keytool -printcert -jarfile droppedapk/build/outputs/apk/debug/droppedapk-debug.apk -rfc > cert.pem
-        KEY_BASE64=$(openssl x509 -pubkey -noout -in cert.pem | grep -v "PUBLIC KEY" | tr -d '\n')
-        
-        # 更新 Main.java 中的 TARGET_CERT_HEX 和 TARGET_KEY_BASE64
-        sed -i "s|static final String TARGET_CERT_HEX = \".*\"|static final String TARGET_CERT_HEX = \"$CERT_HEX\"|" app/src/main/java/com/example/abxoverflow/Main.java
-        sed -i "s|static final String TARGET_KEY_BASE64 = \".*\"|static final String TARGET_KEY_BASE64 = \"$KEY_BASE64\"|" app/src/main/java/com/example/abxoverflow/Main.java
-        
-        # 显示更新后的值（用于调试）
+
+        # 确认文件存在
+        APK_PATH="droppedapk/build/outputs/apk/debug/droppedapk-debug.apk"
+        if [ ! -f "$APK_PATH" ]; then
+          echo "Error: APK not found at $APK_PATH"
+          exit 1
+        fi
+
+        # 提取 SHA-256 指纹
+        CERT_HEX=$(keytool -printcert -jarfile "$APK_PATH" 2>/dev/null | grep "SHA-256" | head -1 | awk -F': ' '{print $2}' | tr -d ':')
+
+        # 如果 keytool 提取失败，尝试另一种方法
+        if [ -z "$CERT_HEX" ]; then
+          echo "keytool extraction failed, trying alternative method..."
+          CERT_HEX=$(unzip -p "$APK_PATH" META-INF/*.RSA 2>/dev/null | keytool -printcert 2>/dev/null | grep "SHA-256" | head -1 | awk -F': ' '{print $2}' | tr -d ':')
+        fi
+
+        # 提取公钥
+        keytool -printcert -jarfile "$APK_PATH" -rfc > cert.pem 2>/dev/null
+        KEY_BASE64=$(openssl x509 -pubkey -noout -in cert.pem 2>/dev/null | grep -v "PUBLIC KEY" | tr -d '\n')
+
+        # 如果公钥提取失败，尝试从证书中提取
+        if [ -z "$KEY_BASE64" ]; then
+          echo "Public key extraction failed, trying alternative..."
+          KEY_BASE64=$(openssl x509 -in cert.pem -pubkey -noout 2>/dev/null | sed -n '/BEGIN PUBLIC KEY/,/END PUBLIC KEY/p' | grep -v "PUBLIC KEY" | tr -d '\n')
+        fi
+
+        # 检查变量是否为空
+        if [ -z "$CERT_HEX" ] || [ -z "$KEY_BASE64" ]; then
+          echo "Error: Failed to extract certificate or public key"
+          echo "CERT_HEX length: ${#CERT_HEX}"
+          echo "KEY_BASE64 length: ${#KEY_BASE64}"
+          exit 1
+        fi
+
         echo "Updated TARGET_CERT_HEX: $CERT_HEX"
         echo "Updated TARGET_KEY_BASE64: $KEY_BASE64"
 
-    
+        # 更新 Main.java
+        sed -i "s|static final String TARGET_CERT_HEX = \".*\"|static final String TARGET_CERT_HEX = \"$CERT_HEX\"|" app/src/main/java/com/example/abxoverflow/Main.java
+        sed -i "s|static final String TARGET_KEY_BASE64 = \".*\"|static final String TARGET_KEY_BASE64 = \"$KEY_BASE64\"|" app/src/main/java/com/example/abxoverflow/Main.java
+
     - name: Copy droppedapk to app assets
       run: |
         rm -rf app/src/main/assets
         mkdir -p app/src/main/assets
         cp droppedapk/build/outputs/apk/debug/droppedapk-debug.apk app/src/main/assets/droppedapk-release.apk
 
-    
     - name: Build app APK (Debug)
       run: ./gradlew :app:assembleDebug
 
-    
     - name: Upload APKs as artifacts
       uses: actions/upload-artifact@v4
       with:
